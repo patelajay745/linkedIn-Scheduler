@@ -1,0 +1,40 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum PostStatus{
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  FAILED
+}
+
+model Post{
+  id String @id @default(uuid())
+  content String
+  imageUrls String[]
+  scheduledAt DateTime?
+  publishedAt DateTime?
+  status PostStatus
+  linkedinPostId String?
+  bullJobId String?
+  impressions Int?
+  likes Int?
+  comment Int?
+  shares Int?
+  analyticsAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+
+}
