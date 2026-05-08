@@ -35,6 +35,12 @@ model Post{
   analyticsAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
 
-
+model LinkedInToken{
+  id String @id @default("singleton")
+  accessToken String ///@encrypted
+  refreshToken String? ///@encrypted
+  expiresAt DateTime
+  profileId String
 }
