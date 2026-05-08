@@ -1,3 +1,4 @@
+import prisma from "@/lib/prisma";
 import { ApiError } from "@/utils/apiError";
 import { ApiResponse } from "@/utils/apiResponse";
 import { asyncHandler } from "@/utils/asyncHandler";
@@ -45,7 +46,35 @@ export const callback = asyncHandler(async (req: Request, res: Response) => {
     refresh_token?: string;
   };
 
-  return res
-    .status(200)
-    .json(new ApiResponse(200, "Code are fetched", tokenData));
+  const profileData = await fetch("https://api.linkedin.com/v2/userinfo", {
+    method: "GET",
+    headers: { Authorization: `Bearer ${tokenData.access_token}` },
+  });
+
+  const profile = (await profileData.json()) as {
+    sub: string;
+    name: string;
+    email: string;
+  };
+
+  const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000);
+
+  const savedData = await prisma.linkedInToken.upsert({
+    where: { id: "singleton" },
+    update: {
+      accessToken: tokenData.access_token,
+      refreshToken: tokenData.refresh_token,
+      profileId: profile.sub,
+      expiresAt,
+    },
+    create: {
+      id: "singleton",
+      accessToken: tokenData.access_token,
+      refreshToken: tokenData.refresh_token,
+      profileId: profile.sub,
+      expiresAt,
+    },
+  });
+
+  return res.status(200).json(new ApiResponse(200, "All is good", profile));
 });
