@@ -35,12 +35,30 @@ model Post{
   analyticsAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  userId String @unique
+  user User @relation(fields: [userId], references: [id])
+}
+
+model User{
+  id String @id 
+  name String 
+  email String 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  linkedInToken LinkedInToken?
+  posts Post[]
 }
 
 model LinkedInToken{
-  id String @id @default("singleton")
+  id String @id @default(uuid())
   accessToken String ///@encrypted
   refreshToken String? ///@encrypted
   expiresAt DateTime
-  profileId String
+
+  userId String @unique
+  user User @relation(fields: [userId], references: [id])
+
 }
+

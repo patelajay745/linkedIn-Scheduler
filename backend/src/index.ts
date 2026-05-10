@@ -1,8 +1,38 @@
 import "dotenv/config";
 import express from "express";
 import authRouter from "@/auth/auth.route";
+import { RedisStore } from "connect-redis";
+import session from "express-session";
+import { createClient } from "redis";
+import { errorHandler } from "./utils/errorHandler";
+import helmet from "helmet";
 
 const app = express();
+
+app.use(helmet());
+
+const redisClient = createClient({ url: process.env.REDIS_URL });
+redisClient.connect().catch(console.error);
+
+const redisStore = new RedisStore({
+  client: redisClient,
+  prefix: process.env.APP_NAME + ":",
+});
+
+app.use(
+  session({
+    store: redisStore,
+    resave: false, // required: force lightweight session keep alive (touch)
+    saveUninitialized: false, // recommended: only save session when data exists
+    secret: process.env.SESSION_SECRET!,
+    cookie: {
+      maxAge: 60 * 24 * 60 * 60 * 1000, //60 days
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+    },
+  })
+);
 
 const PORT = process.env.PORT || 8080;
 
@@ -11,6 +41,8 @@ app.get("/health", (req, res) => {
 });
 
 app.use("/api/v1/auth", authRouter);
+
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

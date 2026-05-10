@@ -21,7 +21,7 @@ export const callback = asyncHandler(async (req: Request, res: Response) => {
   const code = req.query["code"];
 
   if (!code)
-    throw new ApiError(500, "Code not found in url,something went wrong");
+    throw new ApiError(400, "Code not found in url,something went wrong");
 
   const body = new URLSearchParams({
     grant_type: "authorization_code",
@@ -40,6 +40,9 @@ export const callback = asyncHandler(async (req: Request, res: Response) => {
     }
   );
 
+  if (!tokenRes.ok)
+    throw new ApiError(400, "Bad request,Couln't get linkedin token");
+
   const tokenData = (await tokenRes.json()) as {
     access_token: string;
     expires_in: number;
@@ -51,30 +54,62 @@ export const callback = asyncHandler(async (req: Request, res: Response) => {
     headers: { Authorization: `Bearer ${tokenData.access_token}` },
   });
 
+  if (!profileData.ok)
+    throw new ApiError(400, "Bad request,Couln't get linkedin profile");
+
   const profile = (await profileData.json()) as {
     sub: string;
     name: string;
     email: string;
   };
 
+  if (profile.sub !== process.env.ALLOWED_LINKEDIN_ID)
+    throw new ApiError(403, "Access denied");
+
   const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000);
 
-  const savedData = await prisma.linkedInToken.upsert({
-    where: { id: "singleton" },
-    update: {
-      accessToken: tokenData.access_token,
-      refreshToken: tokenData.refresh_token,
-      profileId: profile.sub,
-      expiresAt,
-    },
+  const user = await prisma.user.upsert({
+    where: { id: profile.sub },
+    update: { name: profile.name, email: profile.email },
     create: {
-      id: "singleton",
-      accessToken: tokenData.access_token,
-      refreshToken: tokenData.refresh_token,
-      profileId: profile.sub,
-      expiresAt,
+      id: profile.sub,
+      name: profile.name,
+      email: profile.email,
     },
   });
 
-  return res.status(200).json(new ApiResponse(200, "All is good", profile));
+  await prisma.linkedInToken.upsert({
+    where: { userId: user.id },
+    update: {
+      accessToken: tokenData.access_token,
+      refreshToken: tokenData.refresh_token,
+      expiresAt,
+    },
+    create: {
+      accessToken: tokenData.access_token,
+      refreshToken: tokenData.refresh_token,
+      expiresAt,
+      userId: user.id,
+    },
+  });
+
+  req.session.user = {
+    id: profile.sub,
+    name: profile.name,
+    email: profile.email,
+  };
+
+  return res.redirect(process.env.FRONTEND_URL!);
 });
+
+export const getUserProfile = asyncHandler(
+  async (req: Request, res: Response) => {
+    return res.status(200).json(
+      new ApiResponse(200, "User is fetched", {
+        id: req.session.user?.id,
+        name: req.session.user?.name,
+        email: req.session.user?.email,
+      })
+    );
+  }
+);

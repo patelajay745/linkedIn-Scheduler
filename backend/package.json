@@ -13,15 +13,19 @@
   "@prisma/adapter-pg": "^7.8.0",
   "@prisma/client": "^7.8.0",
   "axios": "^1.16.0",
+  "connect-redis": "^9.0.0",
   "cors": "^2.8.6",
   "dotenv": "^17.4.2",
   "express": "^5.2.1",
+  "express-session": "^1.19.0",
   "helmet": "^8.1.0",
-  "prisma-field-encryption": "^1.6.0"
+  "prisma-field-encryption": "^1.6.0",
+  "redis": "^5.12.1"
  },
  "devDependencies": {
   "@types/bun": "latest",
   "@types/express": "^5.0.6",
+  "@types/express-session": "^1.19.0",
   "@types/node": "^25.6.0",
   "prettier": "^3.8.3",
   "prisma": "^7.8.0"
