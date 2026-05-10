@@ -4,7 +4,7 @@ import {
   getUserProfile,
   redirectToLinkedIn,
 } from "./auth.controller";
-import { requireAuth } from "@/middlewares/apiAuth";
+import { requireAuth } from "@/shared/middlewares/apiAuth";
 
 const route = Router();
 

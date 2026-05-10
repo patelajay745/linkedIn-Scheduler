@@ -1,10 +1,11 @@
 import "dotenv/config";
 import express from "express";
 import authRouter from "@/auth/auth.route";
+import uploadRouter from "@/upload/upload.route";
 import { RedisStore } from "connect-redis";
 import session from "express-session";
 import { createClient } from "redis";
-import { errorHandler } from "./utils/errorHandler";
+import { errorHandler } from "@/shared/utils/errorHandler";
 import helmet from "helmet";
 
 const app = express();
@@ -28,7 +29,7 @@ app.use(
     cookie: {
       maxAge: 60 * 24 * 60 * 60 * 1000, //60 days
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
     },
   })
@@ -36,11 +37,15 @@ app.use(
 
 const PORT = process.env.PORT || 8080;
 
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 app.get("/health", (req, res) => {
   res.send("Up and Running");
 });
 
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/upload", uploadRouter);
 
 app.use(errorHandler);
 

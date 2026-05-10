@@ -1,7 +1,7 @@
-import prisma from "@/lib/prisma";
-import { ApiError } from "@/utils/apiError";
-import { ApiResponse } from "@/utils/apiResponse";
-import { asyncHandler } from "@/utils/asyncHandler";
+import prisma from "@/shared/lib/prisma";
+import { ApiError } from "@/shared/utils/apiError";
+import { ApiResponse } from "@/shared/utils/apiResponse";
+import { asyncHandler } from "@/shared/utils/asyncHandler";
 import type { Request, Response } from "express";
 
 export const redirectToLinkedIn = asyncHandler(
