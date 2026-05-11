@@ -1,7 +1,7 @@
 import { requireAuth } from "@/shared/middlewares/apiAuth";
 import { validateRequest } from "@/shared/middlewares/requestValidator";
 import { createPostSchema } from "@/shared/validators/postRequestValidators";
-import { createPost, getAllPosts } from "@/post/post.controller";
+import { createPost, getAllPosts, getAPost } from "@/post/post.controller";
 
 import { Router } from "express";
 
@@ -11,5 +11,6 @@ router.use(requireAuth);
 
 router.post("/", validateRequest(createPostSchema), createPost);
 router.get("/", getAllPosts);
+router.get("/:id", getAPost);
 
 export default router;

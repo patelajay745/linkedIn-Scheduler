@@ -1,5 +1,6 @@
-import { PostStatus } from "@/generated/prisma/enums";
+import { PostStatus } from "@/generated/prisma/client";
 import prisma from "@/shared/lib/prisma";
+import { postSelect, type PostDTO } from "@/shared/types/post.types";
 
 class PostService {
   async savePost(
@@ -7,7 +8,7 @@ class PostService {
     content: string,
     imageUrls?: string[],
     scheduledAt?: string
-  ) {
+  ): Promise<PostDTO> {
     const savedPost = await prisma.post.create({
       data: {
         userId: userId,
@@ -16,6 +17,7 @@ class PostService {
         scheduledAt,
         status: scheduledAt ? PostStatus.SCHEDULED : PostStatus.DRAFT,
       },
+      select: postSelect,
     });
 
     return savedPost;
@@ -26,7 +28,7 @@ class PostService {
     status?: PostStatus,
     from?: string,
     to?: string
-  ) {
+  ): Promise<PostDTO[]> {
     const posts = await prisma.post.findMany({
       where: {
         userId,
@@ -36,17 +38,20 @@ class PostService {
             scheduledAt: { gte: new Date(from), lte: new Date(to) },
           }),
       },
-      select: {
-        id: true,
-        content: true,
-        imageUrls: true,
-        status: true,
-        scheduledAt: true,
-        publishedAt: true,
-        createdAt: true,
-      },
+      select: postSelect,
     });
     return posts;
+  }
+
+  async getAPost(postId: string): Promise<PostDTO | null> {
+    const post = await prisma.post.findUnique({
+      where: {
+        id: postId,
+      },
+      select: postSelect,
+    });
+
+    return post;
   }
 }
 

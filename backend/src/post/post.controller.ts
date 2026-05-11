@@ -44,16 +44,24 @@ export const getAllPosts = asyncHandler(async (req: Request, res: Response) => {
     to
   );
 
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(200, "All Posts are fetched", {
-        posts,
-        count: posts.length,
-      })
-    );
+  return res.status(200).json(
+    new ApiResponse(200, "All Posts are fetched", {
+      posts,
+      count: posts.length,
+    })
+  );
 });
-export const getAPost = asyncHandler(async (req: Request, res: Response) => {});
+export const getAPost = asyncHandler(async (req: Request, res: Response) => {
+  const { id: PostId } = req.params as { id: string };
+
+  const post = await postService.getAPost(PostId);
+
+  return res.status(200).json(
+    new ApiResponse(200, "Post is fetched", {
+      post,
+    })
+  );
+});
 export const updateAPost = asyncHandler(
   async (req: Request, res: Response) => {}
 );
