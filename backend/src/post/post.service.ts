@@ -53,6 +53,14 @@ class PostService {
 
     return post;
   }
+
+  async deletePost(userId: string, postId: string) {
+    const result = await prisma.post.deleteMany({
+      where: { id: postId, userId },
+    });
+
+    return result.count > 0;
+  }
 }
 
 export const postService = new PostService();

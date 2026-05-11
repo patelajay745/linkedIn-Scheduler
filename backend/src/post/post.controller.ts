@@ -56,6 +56,8 @@ export const getAPost = asyncHandler(async (req: Request, res: Response) => {
 
   const post = await postService.getAPost(PostId);
 
+  if (!post) throw new ApiError(404, "Post not found");
+
   return res.status(200).json(
     new ApiResponse(200, "Post is fetched", {
       post,
@@ -65,9 +67,17 @@ export const getAPost = asyncHandler(async (req: Request, res: Response) => {
 export const updateAPost = asyncHandler(
   async (req: Request, res: Response) => {}
 );
-export const DeleteAPost = asyncHandler(
-  async (req: Request, res: Response) => {}
-);
+export const deleteAPost = asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params as { id: string };
+
+  const userId = req.session.user?.id;
+
+  const deletedPost = await postService.deletePost(userId!, id);
+
+  if (!deletedPost) throw new ApiError(404, "Invalid postId");
+
+  return res.status(200).json(new ApiResponse(200, "Post has been deleted"));
+});
 export const getCalendar = asyncHandler(
   async (req: Request, res: Response) => {}
 );
