@@ -25,7 +25,7 @@ model Post{
   imageUrls String[]
   scheduledAt DateTime?
   publishedAt DateTime?
-  status PostStatus
+  status PostStatus @default(SCHEDULED)
   linkedinPostId String?
   bullJobId String?
   impressions Int?

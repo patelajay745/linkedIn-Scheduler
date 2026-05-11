@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import authRouter from "@/auth/auth.route";
 import uploadRouter from "@/upload/upload.route";
+import postRouter from "@/post/post.route";
 import { RedisStore } from "connect-redis";
 import session from "express-session";
 import { createClient } from "redis";
@@ -46,6 +47,7 @@ app.get("/health", (req, res) => {
 
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/upload", uploadRouter);
+app.use("/api/v1/posts", postRouter);
 
 app.use(errorHandler);
 

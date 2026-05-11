@@ -6,11 +6,11 @@ import {
 } from "./auth.controller";
 import { requireAuth } from "@/shared/middlewares/apiAuth";
 
-const route = Router();
+const router = Router();
 
-route.get("/linkedin", redirectToLinkedIn);
-route.get("/linkedin/callback", callback);
+router.get("/linkedin", redirectToLinkedIn);
+router.get("/linkedin/callback", callback);
 
-route.get("/me", requireAuth, getUserProfile);
+router.get("/me", requireAuth, getUserProfile);
 
-export default route;
+export default router;
