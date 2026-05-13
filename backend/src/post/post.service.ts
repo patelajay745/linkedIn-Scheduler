@@ -1,6 +1,7 @@
 import { PostStatus } from "@/generated/prisma/client";
 import prisma from "@/shared/lib/prisma";
 import { postSelect, type PostDTO } from "@/shared/types/post.types";
+import { ApiError } from "@/shared/utils/apiError";
 
 class PostService {
   async savePost(
@@ -60,6 +61,38 @@ class PostService {
     });
 
     return result.count > 0;
+  }
+
+  async updatePost(
+    userId: string,
+    postId: string,
+    content?: string,
+    imageUrls?: string[],
+    scheduledAt?: string
+  ) {
+    const data = {
+      ...(content !== undefined && { content }),
+      ...(imageUrls !== undefined && { imageUrls: { set: imageUrls } }),
+      ...(scheduledAt !== undefined && {
+        scheduledAt: scheduledAt || null,
+        status: scheduledAt ? PostStatus.SCHEDULED : PostStatus.DRAFT,
+      }),
+    };
+
+    const updatedPostCount = await prisma.post.updateMany({
+      where: {
+        userId,
+        id: postId,
+        status: { in: [PostStatus.DRAFT, PostStatus.SCHEDULED] },
+      },
+      data,
+    });
+
+    if (updatedPostCount.count < 1) throw new ApiError(404, "Post not found");
+
+    const updatedPost = await this.getAPost(postId);
+
+    return updatedPost;
   }
 }
 

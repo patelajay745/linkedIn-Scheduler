@@ -26,6 +26,7 @@ export const createPost = asyncHandler(async (req: Request, res: Response) => {
     })
   );
 });
+
 export const getAllPosts = asyncHandler(async (req: Request, res: Response) => {
   const { status, from, to } = req.query as Record<string, string | undefined>;
 
@@ -51,6 +52,7 @@ export const getAllPosts = asyncHandler(async (req: Request, res: Response) => {
     })
   );
 });
+
 export const getAPost = asyncHandler(async (req: Request, res: Response) => {
   const { id: PostId } = req.params as { id: string };
 
@@ -64,9 +66,28 @@ export const getAPost = asyncHandler(async (req: Request, res: Response) => {
     })
   );
 });
-export const updateAPost = asyncHandler(
-  async (req: Request, res: Response) => {}
-);
+
+export const updateAPost = asyncHandler(async (req: Request, res: Response) => {
+  const { content, imageUrls, scheduledAt } = req.body;
+
+  const { id: postId } = req.params as { id: string };
+
+  const userID = req.session.user?.id;
+  const updatedPost = await postService.updatePost(
+    userID!,
+    postId,
+    content,
+    imageUrls,
+    scheduledAt
+  );
+
+  return res.status(200).json(
+    new ApiResponse(200, "Post has been updated", {
+      post: updatedPost,
+    })
+  );
+});
+
 export const deleteAPost = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params as { id: string };
 
@@ -78,6 +99,7 @@ export const deleteAPost = asyncHandler(async (req: Request, res: Response) => {
 
   return res.status(200).json(new ApiResponse(200, "Post has been deleted"));
 });
+
 export const getCalendar = asyncHandler(
   async (req: Request, res: Response) => {}
 );
