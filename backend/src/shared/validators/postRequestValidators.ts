@@ -2,7 +2,7 @@ import z from "zod";
 
 export const createPostSchema = z.object({
   content: z.string().min(1, { error: "content is required" }),
-  imageUrls: z.array(z.url()).max(20).optional(),
+  imageUrls: z.array(z.url()).max(200).optional(),
   scheduledAt: z.iso.datetime().optional(),
 });
 

@@ -4,9 +4,12 @@ import { postService } from "./post.service";
 import { ApiResponse } from "@/shared/utils/apiResponse";
 import { PostStatus } from "@/generated/prisma/enums";
 import { ApiError } from "@/shared/utils/apiError";
+import { linkedInService } from "@/shared/services/linkedin";
 
 export const createPost = asyncHandler(async (req: Request, res: Response) => {
   const { content, imageUrls, scheduledAt } = req.body;
+
+  console.log("reaching to controller");
 
   const { id } = req.session.user!;
 
@@ -102,4 +105,16 @@ export const deleteAPost = asyncHandler(async (req: Request, res: Response) => {
 
 export const getCalendar = asyncHandler(
   async (req: Request, res: Response) => {}
+);
+
+export const publishPostNow = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { id: postId } = req.params as { id: string };
+
+    const userId = req.session.user?.id;
+
+    await linkedInService.publishPost(postId, userId!);
+
+    return res.status(200).json(new ApiResponse(200, "Post is published"));
+  }
 );

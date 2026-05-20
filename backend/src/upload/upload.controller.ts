@@ -7,15 +7,14 @@ export const getPresignedUrl = asyncHandler(
   async (req: Request, res: Response) => {
     const { fileName, contentType } = req.body;
 
-    const { url, fileKey } = await storageService.generatePresignedUrl(
-      fileName,
-      contentType
-    );
+    const { url, fileKey, publicUrl } =
+      await storageService.generatePresignedUrl(fileName, contentType);
 
     return res.status(200).json(
       new ApiResponse(200, "presigned url is generated", {
         url,
         fileKey,
+        publicUrl,
       })
     );
   }

@@ -9,6 +9,7 @@ import {
   deleteAPost,
   getAllPosts,
   getAPost,
+  publishPostNow,
   updateAPost,
 } from "@/post/post.controller";
 
@@ -23,5 +24,7 @@ router.get("/", getAllPosts);
 router.get("/:id", getAPost);
 router.delete("/:id", deleteAPost);
 router.patch("/:id", validateRequest(updatePostSchema), updateAPost);
+
+router.post("/:id/publish-now", publishPostNow);
 
 export default router;

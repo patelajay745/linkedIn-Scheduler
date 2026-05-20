@@ -6,6 +6,8 @@ export const validateRequest = (schema: ZodSchema) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       await schema.parseAsync(req.body);
+
+      console.log("reaching to validator");
       next();
     } catch (error) {
       const e = error as Error;

@@ -25,7 +25,8 @@ class Storage {
 
     const url = await getSignedUrl(this.client, command, { expiresIn: 300 });
 
-    return { url, fileKey };
+    const publicUrl = `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`;
+    return { url, fileKey, publicUrl };
   }
 }
 
