@@ -1,5 +1,6 @@
 import { PostStatus } from "@/generated/prisma/client";
 import prisma from "@/shared/lib/prisma";
+import { schedulerService } from "@/shared/services/scheduler";
 import { postSelect, type PostDTO } from "@/shared/types/post.types";
 import { ApiError } from "@/shared/utils/apiError";
 
@@ -20,6 +21,23 @@ class PostService {
       },
       select: postSelect,
     });
+
+    if (scheduledAt) {
+      const jobId = await schedulerService.enqueuePost(
+        savedPost.id,
+        userId,
+        scheduledAt
+      );
+
+      await prisma.post.update({
+        where: {
+          id: savedPost.id,
+        },
+        data: {
+          bullJobId: jobId,
+        },
+      });
+    }
 
     return savedPost;
   }
@@ -56,6 +74,18 @@ class PostService {
   }
 
   async deletePost(userId: string, postId: string) {
+    const post = await prisma.post.findFirst({
+      where: {
+        id: postId,
+        userId,
+      },
+      select: { bullJobId: true },
+    });
+
+    if (post?.bullJobId) {
+      await schedulerService.cancelPost(post.bullJobId);
+    }
+
     const result = await prisma.post.deleteMany({
       where: { id: postId, userId },
     });
@@ -70,6 +100,20 @@ class PostService {
     imageUrls?: string[],
     scheduledAt?: string
   ) {
+    let oldBullJobId: string | null = null;
+
+    if (scheduledAt !== undefined) {
+      const current = await prisma.post.findFirst({
+        where: { id: postId, userId },
+        select: { bullJobId: true },
+      });
+      oldBullJobId = current?.bullJobId ?? null;
+    }
+
+    if (oldBullJobId) {
+      await schedulerService.cancelPost(oldBullJobId);
+    }
+
     const data = {
       ...(content !== undefined && { content }),
       ...(imageUrls !== undefined && { imageUrls: { set: imageUrls } }),
@@ -89,6 +133,18 @@ class PostService {
     });
 
     if (updatedPostCount.count < 1) throw new ApiError(404, "Post not found");
+
+    if (scheduledAt) {
+      const newJobId = await schedulerService.enqueuePost(
+        postId,
+        userId,
+        scheduledAt
+      );
+      await prisma.post.update({
+        where: { id: postId },
+        data: { bullJobId: newJobId },
+      });
+    }
 
     const updatedPost = await this.getAPost(postId);
 
