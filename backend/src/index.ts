@@ -8,6 +8,7 @@ import session from "express-session";
 import { createClient } from "redis";
 import { errorHandler } from "@/shared/utils/errorHandler";
 import helmet from "helmet";
+import cors from "cors";
 
 const app = express();
 
@@ -22,6 +23,13 @@ const redisStore = new RedisStore({
 });
 
 app.use(
+  cors({
+    origin: process.env.FRONTEND_URL,
+    credentials: true,
+  })
+);
+
+app.use(
   session({
     store: redisStore,
     resave: false, // required: force lightweight session keep alive (touch)
@@ -31,7 +39,7 @@ app.use(
       maxAge: 60 * 24 * 60 * 60 * 1000, //60 days
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     },
   })
 );
