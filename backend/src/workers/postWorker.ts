@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { PostStatus } from "@/generated/prisma/enums";
 import prisma from "@/shared/lib/prisma";
 import { linkedInService } from "@/shared/services/linkedin";
