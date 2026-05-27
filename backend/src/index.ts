@@ -45,9 +45,9 @@ app.get("/health", (req, res) => {
   res.send("Up and Running");
 });
 
-app.use("/api/v1/auth", authRouter);
-app.use("/api/v1/upload", uploadRouter);
-app.use("/api/v1/posts", postRouter);
+app.use("/v1/auth", authRouter);
+app.use("/v1/upload", uploadRouter);
+app.use("/v1/posts", postRouter);
 
 app.use(errorHandler);
 

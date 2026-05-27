@@ -24,6 +24,7 @@ const worker = new Worker<{ postId: string; userId: string }>(
   },
   {
     connection: queueConnection,
+    prefix: process.env.APP_NAME + ":",
   }
 );
 

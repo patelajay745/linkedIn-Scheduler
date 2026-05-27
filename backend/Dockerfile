@@ -15,13 +15,15 @@ RUN bun run build
 FROM oven/bun:1-alpine AS production
 WORKDIR /app
 
+RUN bun add prisma --no-save
 
-COPY package.json bun.lock ./
 
-RUN bun install --frozen-lockfile --production
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
+# COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 
 USER bun

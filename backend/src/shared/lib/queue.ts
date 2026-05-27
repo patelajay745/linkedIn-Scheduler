@@ -7,4 +7,5 @@ const queueConnection = new Redis(process.env.REDIS_URL!, {
 
 export const queue = new Queue<{ postId: string; userId: string }>("posts", {
   connection: queueConnection,
+  prefix: process.env.APP_NAME + ":",
 });
