@@ -1,17 +1,17 @@
 services:
-  # backend:
-  #   build:
-  #     context: .
-  #     no_cache: true
-  #   container_name: my_subscription_backend
-  #   env_file:
-  #     - .env.prod
-  #   ports:
-  #     - "8083:8083"
-  #   depends_on:
-  #     - postgres
-  #     - redis
-  #   restart: unless-stopped
+  backend:
+    build:
+      context: .
+      no_cache: true
+    container_name: my_linkedin_scheduler_backend
+    env_file:
+      - .env.dev
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
 
   postgres:
     image: postgres:16
