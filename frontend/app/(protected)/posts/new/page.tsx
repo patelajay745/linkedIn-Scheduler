@@ -10,11 +10,24 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CreatePostInput, createPostSchema } from "@/lib/validators/postSchema";
 
+export interface createPostData {
+  content: string;
+  imageUrls: string[];
+  scheduledAt: string;
+}
+
 const CreatePostPage = () => {
-  const { register, handleSubmit, watch } = useForm<CreatePostInput>({
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm<CreatePostInput>({
     resolver: zodResolver(createPostSchema),
   });
   const onSubmit: SubmitHandler<CreatePostInput> = (data) => console.log(data);
+
+  const [isUploading, setIsUploading] = useState(false);
 
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [imageInput, setImageInput] = useState("");
@@ -30,6 +43,14 @@ const CreatePostPage = () => {
 
   const removeImageUrl = (index: number) => {
     setImageUrls((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+
+    if (!files) return;
+
+    setIsUploading(true);
   };
 
   return (
@@ -51,7 +72,7 @@ const CreatePostPage = () => {
                   Content <span className="text-destructive">*</span>
                 </label>
                 <textarea
-                  {...register("content")}
+                  {...register("content", { required: true })}
                   placeholder="What do you want to share?"
                   rows={8}
                   maxLength={3000}
@@ -60,71 +81,25 @@ const CreatePostPage = () => {
                 <p className="text-xs text-muted-foreground text-right font-mono">
                   {watch("content")?.length} / 3000
                 </p>
-              </div>
 
-              {/* image upload */}
-
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-semibold font-head">
-                  Images{" "}
-                  <span className="text-muted-foreground font-normal">
-                    (optional, max 20)
-                  </span>
-                </label>
-                <div className="flex gap-2">
-                  <Input
-                    type="file"
-                    value={imageInput}
-                    accept="image/*"
-                    onChange={(e) => setImageInput(e.target.value)}
-                    placeholder="Paste S3 image URL"
-                    onKeyDown={(e) => e.key === "Enter" && addImageUrl()}
-                  />
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={addImageUrl}
-                    disabled={!imageInput.trim() || imageUrls.length >= 20}
-                    type="button"
-                  >
-                    <Plus className="size-4" />
-                  </Button>
-                </div>
-                {imageUrls.length > 0 && (
-                  <ul className="flex flex-col gap-1.5 mt-1">
-                    {imageUrls.map((url, i) => (
-                      <li
-                        key={i}
-                        className="flex items-center gap-2 text-xs font-mono bg-muted px-3 py-2 rounded border-2"
-                      >
-                        <ImageIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                        <span className="truncate flex-1">{url}</span>
-                        <button
-                          onClick={() => removeImageUrl(i)}
-                          className="text-muted-foreground hover:text-destructive transition-colors shrink-0"
-                        >
-                          <X className="size-3.5" />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                {errors.content && <span>This field is required</span>}
               </div>
 
               {/* Image URLs */}
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-semibold font-head">
-                  Images{" "}
+                  Images
                   <span className="text-muted-foreground font-normal">
                     (optional, max 20)
                   </span>
                 </label>
                 <div className="flex gap-2">
-                  <Input
-                    value={imageInput}
-                    onChange={(e) => setImageInput(e.target.value)}
-                    placeholder="Paste S3 image URL"
-                    onKeyDown={(e) => e.key === "Enter" && addImageUrl()}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    max={4}
+                    onChange={() => {}}
                   />
                   <Button
                     variant="outline"
