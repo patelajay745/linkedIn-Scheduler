@@ -11,7 +11,7 @@ export const useEditPost = () => {
       data: {
         content?: string;
         imageUrls?: string[];
-        scheduledAt: string;
+        scheduledAt?: string;
       };
       id: string;
     }) => api.patch(`/posts/${id}`, data),

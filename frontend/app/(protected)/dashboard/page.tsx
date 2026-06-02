@@ -3,14 +3,10 @@ import { Error } from "@/components/Custom/Error";
 import { Loader } from "@/components/Custom/Loader";
 import { PostCard } from "@/components/Custom/posts/PostCard";
 import { Button } from "@/components/retroui/Button";
-import { Card } from "@/components/retroui/Card";
 import { Empty } from "@/components/retroui/Empty";
 import { useDeletePost } from "@/hooks/useDeletePost";
 import { usePost } from "@/hooks/usePost";
-import { formatDistanceToNow } from "date-fns";
 import { useRouter } from "next/navigation";
-import { Label } from "radix-ui";
-import { useEffect } from "react";
 
 const DashBoardPage = () => {
   const { data, isLoading, isError } = usePost();
@@ -37,12 +33,21 @@ const DashBoardPage = () => {
     router.push("/posts/new");
   };
 
+  const handleEditButton = (id: string) => {
+    router.push(`/posts/${id}/edit`);
+  };
+
   return (
     <>
       <Button onClick={handleCreateButton}>Create</Button>
       {data?.posts?.length ? (
         data.posts.map((post) => (
-          <PostCard {...post} onDelete={() => handleDeletePost(post.id)} />
+          <PostCard
+            key={post.id}
+            {...post}
+            onEdit={() => handleEditButton(post.id)}
+            onDelete={() => handleDeletePost(post.id)}
+          />
         ))
       ) : (
         <Empty>
