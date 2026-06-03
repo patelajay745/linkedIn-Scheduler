@@ -18,7 +18,7 @@ export default function LandingPage() {
         <WhyFreeSection />
         <MicroSaasSection />
         <UseCasesSection />
-        <DeployCtaSection />
+
         <LandingFooter />
       </div>
     </SmoothScroll>
