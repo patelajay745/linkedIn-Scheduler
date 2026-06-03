@@ -13,6 +13,7 @@ import { useCreatePost } from "@/hooks/useCreatePost";
 import { useRouter } from "next/navigation";
 import { ImagePicker } from "@/components/Custom/posts/ImagePicker";
 import { SchedulePicker } from "@/components/Custom/posts/SchedulePicker";
+import { Content } from "@/components/Custom/posts/ContentInput";
 
 export interface createPostData {
   content: string;
@@ -79,7 +80,7 @@ const CreatePostPage = () => {
           <Card className="w-full">
             <Card.Content className="flex flex-col gap-6 p-6">
               {/* Content */}
-              <div className="flex flex-col gap-2">
+              {/* <div className="flex flex-col gap-2">
                 <label className="text-sm font-semibold font-head">
                   Content <span className="text-destructive">*</span>
                 </label>
@@ -98,7 +99,13 @@ const CreatePostPage = () => {
                     {errors.content.message}
                   </span>
                 )}
-              </div>
+              </div> */}
+
+              <Content
+                register={register}
+                errors={errors}
+                contentLength={contentLength}
+              />
 
               {/* Images */}
               <ImagePicker
