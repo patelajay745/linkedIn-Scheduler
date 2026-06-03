@@ -3,10 +3,11 @@
 import { Button } from "@/components/retroui/Button";
 import { Card } from "@/components/retroui/Card";
 import { Post as PostType, PostStatus } from "@/types";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { PencilEdit01Icon, Delete02Icon, Calendar03Icon, Image02Icon } from "@hugeicons/core-free-icons";
 import { formatDistanceToNow } from "date-fns";
-import { Calendar, ImageIcon, Pencil, Trash2 } from "lucide-react";
 
-const statusStyles: Record<PostStatus, string> = {
+const STATUS_STYLES: Record<PostStatus, string> = {
   [PostStatus.DRAFT]: "bg-gray-100 text-gray-700 border-2 border-gray-400",
   [PostStatus.SCHEDULED]: "bg-blue-100 text-blue-700 border-2 border-blue-400",
   [PostStatus.PUBLISHED]: "bg-green-100 text-green-700 border-2 border-green-500",
@@ -34,9 +35,7 @@ export const PostCard = ({
   return (
     <Card className="w-full flex flex-col gap-0">
       <Card.Header className="flex flex-row items-center justify-between py-3 px-4 border-b-2">
-        <span
-          className={`text-xs font-bold px-2.5 py-1 rounded font-mono tracking-wider ${statusStyles[status]}`}
-        >
+        <span className={`text-xs font-bold px-2.5 py-1 rounded font-mono tracking-wider ${STATUS_STYLES[status]}`}>
           {status}
         </span>
         <span className="text-xs text-muted-foreground font-mono">
@@ -52,7 +51,7 @@ export const PostCard = ({
         <div className="flex flex-col gap-1.5">
           {scheduledAt && (
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-mono">
-              <Calendar className="size-3.5" />
+              <HugeiconsIcon icon={Calendar03Icon} size={14} strokeWidth={1.5} />
               <span>
                 Scheduled for{" "}
                 {new Date(scheduledAt).toLocaleString(undefined, {
@@ -65,10 +64,9 @@ export const PostCard = ({
 
           {imageUrls.length > 0 && (
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-mono">
-              <ImageIcon className="size-3.5" />
+              <HugeiconsIcon icon={Image02Icon} size={14} strokeWidth={1.5} />
               <span>
-                {imageUrls.length} image{imageUrls.length > 1 ? "s" : ""}{" "}
-                attached
+                {imageUrls.length} image{imageUrls.length > 1 ? "s" : ""} attached
               </span>
             </div>
           )}
@@ -83,7 +81,7 @@ export const PostCard = ({
             onClick={() => onEdit?.(id)}
             className="flex items-center gap-1.5"
           >
-            <Pencil className="size-3.5" />
+            <HugeiconsIcon icon={PencilEdit01Icon} size={13} strokeWidth={2} />
             Edit
           </Button>
           <Button
@@ -92,7 +90,7 @@ export const PostCard = ({
             onClick={() => onDelete?.(id)}
             className="flex items-center gap-1.5"
           >
-            <Trash2 className="size-3.5" />
+            <HugeiconsIcon icon={Delete02Icon} size={13} strokeWidth={2} />
             Delete
           </Button>
         </div>
