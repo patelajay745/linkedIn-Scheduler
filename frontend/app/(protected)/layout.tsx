@@ -1,5 +1,6 @@
 "use client";
 
+import { Sidebar } from "@/components/Custom/dashboard/Sidebar";
 import { Loader } from "@/components/retroui/Loader";
 import { useAuth } from "@/hooks/useAuth";
 import { redirect } from "next/navigation";
@@ -10,13 +11,8 @@ const ProtectedLayout = ({ children }: { children: ReactNode }) => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen ">
-        <Loader
-          count={4} // Number of squares
-          duration={0.8} // Animation duration in seconds
-          delayStep={120} // Delay between squares in milliseconds
-          className=""
-        />
+      <div className="flex items-center justify-center h-screen">
+        <Loader count={4} duration={0.8} delayStep={120} className="" />
       </div>
     );
   }
@@ -25,7 +21,12 @@ const ProtectedLayout = ({ children }: { children: ReactNode }) => {
     redirect("/login");
   }
 
-  return <>{children}</>;
+  return (
+    <div className="flex h-screen overflow-hidden bg-background">
+      <Sidebar />
+      <main className="flex-1 overflow-auto">{children}</main>
+    </div>
+  );
 };
 
 export default ProtectedLayout;

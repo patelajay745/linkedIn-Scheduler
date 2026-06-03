@@ -1,68 +1,66 @@
 "use client";
-import { Error } from "@/components/Custom/Error";
-import { Loader } from "@/components/Custom/Loader";
-import { PostCard } from "@/components/Custom/posts/PostCard";
-import { Button } from "@/components/retroui/Button";
-import { Empty } from "@/components/retroui/Empty";
-import { useDeletePost } from "@/hooks/useDeletePost";
-import { usePost } from "@/hooks/usePost";
-import { useRouter } from "next/navigation";
 
-const DashBoardPage = () => {
+import { DayPostsPanel } from "@/components/Custom/dashboard/DayPostsPanel";
+import { PostCalendar } from "@/components/Custom/dashboard/PostCalendar";
+import { Error } from "@/components/Custom/Error";
+import { Loader } from "@/components/retroui/Loader";
+import { usePost } from "@/hooks/usePost";
+import { Post } from "@/types";
+import { isSameDay } from "date-fns";
+import { useState, useMemo } from "react";
+
+const DashboardPage = () => {
   const { data, isLoading, isError } = usePost();
-  const { mutate: deletePost, isPending } = useDeletePost();
-  const router = useRouter();
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
+  // Derive selected day's posts reactively so the panel auto-updates after mutations
+  const selectedDayPosts = useMemo<Post[]>(() => {
+    if (!selectedDate || !data?.posts) return [];
+    return data.posts.filter(
+      (post) => post.scheduledAt && isSameDay(new Date(post.scheduledAt), selectedDate)
+    );
+  }, [selectedDate, data?.posts]);
 
   if (isLoading) {
-    return <Loader />;
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Loader count={4} duration={0.8} delayStep={120} className="" />
+      </div>
+    );
   }
 
   if (isError) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-full">
         <Error />
       </div>
     );
   }
 
-  const handleDeletePost = (id: string) => {
-    deletePost(id);
-  };
-
-  const handleCreateButton = () => {
-    router.push("/posts/new");
-  };
-
-  const handleEditButton = (id: string) => {
-    router.push(`/posts/${id}/edit`);
+  const handleDaySelect = (date: Date) => {
+    // Toggle: clicking the same day again closes the panel
+    setSelectedDate((prev) => (prev && isSameDay(prev, date) ? null : date));
   };
 
   return (
-    <>
-      <Button onClick={handleCreateButton}>Create</Button>
-      {data?.posts?.length ? (
-        data.posts.map((post) => (
-          <PostCard
-            key={post.id}
-            {...post}
-            onEdit={() => handleEditButton(post.id)}
-            onDelete={() => handleDeletePost(post.id)}
-          />
-        ))
-      ) : (
-        <Empty>
-          <Empty.Content>
-            <Empty.Icon className="size-10 md:size-12" />
-            <Empty.Title>No Results</Empty.Title>
-            <Empty.Separator />
-            <Empty.Description>
-              You don't have any post to show
-            </Empty.Description>
-          </Empty.Content>
-        </Empty>
+    <div className="flex h-full overflow-hidden">
+      <div className="flex-1 overflow-hidden">
+        <PostCalendar
+          posts={data?.posts ?? []}
+          selectedDate={selectedDate}
+          onDaySelect={handleDaySelect}
+        />
+      </div>
+
+      {selectedDate && (
+        <DayPostsPanel
+          date={selectedDate}
+          posts={selectedDayPosts}
+          onClose={() => setSelectedDate(null)}
+        />
       )}
-    </>
+    </div>
   );
 };
 
-export default DashBoardPage;
+export default DashboardPage;

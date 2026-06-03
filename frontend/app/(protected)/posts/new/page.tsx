@@ -1,21 +1,22 @@
 "use client";
 
-import { Button } from "@/components/retroui/Button";
-import { Calendar } from "@/components/retroui/Calendar";
-import { Card } from "@/components/retroui/Card";
-import { CalendarIcon, ImageIcon, X } from "lucide-react";
-import { useState } from "react";
-import { useForm, SubmitHandler } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { CreatePostInput, createPostSchema } from "@/lib/validators/postSchema";
-import { uploadImage } from "@/hooks/useUploadImage";
-import { useCreatePost } from "@/hooks/useCreatePost";
-import { useRouter } from "next/navigation";
+import { Content } from "@/components/Custom/posts/ContentInput";
 import { ImagePicker } from "@/components/Custom/posts/ImagePicker";
 import { SchedulePicker } from "@/components/Custom/posts/SchedulePicker";
-import { Content } from "@/components/Custom/posts/ContentInput";
+import { Button } from "@/components/retroui/Button";
+import { Card } from "@/components/retroui/Card";
+import { uploadImage } from "@/hooks/useUploadImage";
+import { useCreatePost } from "@/hooks/useCreatePost";
+import { CreatePostInput, createPostSchema } from "@/lib/validators/postSchema";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowLeftBigIcon } from "@hugeicons/core-free-icons";
+import { zodResolver } from "@hookform/resolvers/zod";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { SubmitHandler, useForm } from "react-hook-form";
 
-export interface createPostData {
+export interface CreatePostData {
   content: string;
   imageUrls: string[];
   scheduledAt?: string;
@@ -36,12 +37,13 @@ const CreatePostPage = () => {
   const [scheduledAt, setScheduledAt] = useState<Date | undefined>(undefined);
   const [showCalendar, setShowCalendar] = useState(false);
 
+  const contentLength = watch("content")?.length ?? 0;
+  const hasContent = !!watch("content")?.trim();
+  const canDraft = hasContent && !isPending;
+  const canSchedule = canDraft && !!scheduledAt;
+
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSelectedFiles((prev) => [...prev, ...Array.from(e.target.files ?? [])]);
-  };
-
-  const handleRemoveFile = (index: number) => {
-    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,91 +56,99 @@ const CreatePostPage = () => {
   const onSubmit: SubmitHandler<CreatePostInput> = async (data) => {
     const imageUrls = await Promise.all(selectedFiles.map(uploadImage));
     createPost(
-      {
-        content: data.content,
-        imageUrls,
-        scheduledAt: scheduledAt?.toISOString(),
-      },
-      { onSuccess: () => router.push("/dashboard") },
+      { content: data.content, imageUrls, scheduledAt: scheduledAt?.toISOString() },
+      { onSuccess: () => router.push("/dashboard") }
     );
   };
 
-  const contentLength = watch("content")?.length ?? 0;
-  const canSubmit = !!watch("content")?.trim() && !isPending;
-
   return (
-    <div className="min-h-screen bg-background py-10 px-4">
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="max-w-2xl mx-auto flex flex-col gap-6">
+    <div className="h-full overflow-auto">
+      <form onSubmit={handleSubmit(onSubmit)} className="h-full flex flex-col">
+
+        {/* Page header */}
+        <div className="flex items-center gap-4 px-6 py-4 border-b-2 border-border shrink-0">
+          <Link href="/dashboard">
+            <Button variant="ghost" size="icon" type="button" aria-label="Back to dashboard">
+              <HugeiconsIcon icon={ArrowLeftBigIcon} size={16} strokeWidth={2} />
+            </Button>
+          </Link>
           <div>
-            <h1 className="text-2xl font-bold font-head">Create Post</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Write your LinkedIn post and optionally schedule it for later.
+            <h1 className="text-lg font-heading font-bold leading-none">Create Post</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Write and optionally schedule your LinkedIn post.
             </p>
           </div>
+        </div>
 
-          <Card className="w-full">
-            <Card.Content className="flex flex-col gap-6 p-6">
-              {/* Content */}
-              {/* <div className="flex flex-col gap-2">
-                <label className="text-sm font-semibold font-head">
-                  Content <span className="text-destructive">*</span>
-                </label>
-                <textarea
-                  {...register("content")}
-                  placeholder="What do you want to share?"
-                  rows={8}
-                  maxLength={3000}
-                  className="w-full rounded border-2 px-4 py-3 text-sm shadow-md resize-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary focus:shadow-xs bg-background"
+        {/* Two-column body */}
+        <div className="flex-1 flex flex-col lg:flex-row gap-0 overflow-hidden">
+
+          {/* Left — content editor */}
+          <div className="flex-1 p-6 overflow-auto">
+            <Card className="w-full h-full">
+              <Card.Content className="p-6 h-full">
+                <Content
+                  register={register}
+                  errors={errors}
+                  contentLength={contentLength}
                 />
-                <p className="text-xs text-muted-foreground text-right font-mono">
-                  {contentLength} / 3000
-                </p>
-                {errors.content && (
-                  <span className="text-xs text-destructive">
-                    {errors.content.message}
-                  </span>
-                )}
-              </div> */}
+              </Card.Content>
+            </Card>
+          </div>
 
-              <Content
-                register={register}
-                errors={errors}
-                contentLength={contentLength}
-              />
+          {/* Right — images + schedule */}
+          <div className="w-full lg:w-80 xl:w-96 border-t-2 lg:border-t-0 lg:border-l-2 border-border flex flex-col overflow-auto">
+            <div className="flex flex-col gap-0 divide-y-2 divide-border">
 
-              {/* Images */}
-              <ImagePicker
-                selectedFiles={selectedFiles}
-                onSelect={handleImageSelect}
-                onRemove={handleRemoveFile}
-              />
+              {/* Images section */}
+              <div className="p-5">
+                <ImagePicker
+                  selectedFiles={selectedFiles}
+                  onSelect={handleImageSelect}
+                  onRemove={(index) =>
+                    setSelectedFiles((prev) => prev.filter((_, i) => i !== index))
+                  }
+                />
+              </div>
 
-              {/* Schedule */}
-              <SchedulePicker
-                scheduledAt={scheduledAt}
-                showCalendar={showCalendar}
-                onToggleCalendar={() => setShowCalendar((v) => !v)}
-                onSelectDate={(date) => {
-                  setScheduledAt(date);
-                  setShowCalendar(false);
-                }}
-                onClear={() => setScheduledAt(undefined)}
-                onTimeChange={handleTimeChange}
-              />
-            </Card.Content>
-          </Card>
+              {/* Schedule section */}
+              <div className="p-5">
+                <SchedulePicker
+                  scheduledAt={scheduledAt}
+                  showCalendar={showCalendar}
+                  onToggleCalendar={() => setShowCalendar((v) => !v)}
+                  onSelectDate={(date) => {
+                    setScheduledAt(date);
+                    setShowCalendar(false);
+                  }}
+                  onClear={() => {
+                    setScheduledAt(undefined);
+                    setShowCalendar(false);
+                  }}
+                  onTimeChange={handleTimeChange}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 justify-end">
-            <Button variant="outline" type="submit" disabled={!canSubmit}>
-              {isPending ? "Saving..." : "Save as Draft"}
+        {/* Actions footer */}
+        <div className="flex items-center justify-between px-6 py-4 border-t-2 border-border shrink-0 bg-background">
+          <Link href="/dashboard">
+            <Button variant="outline" type="button" size="sm">
+              Cancel
             </Button>
-            <Button type="submit" disabled={!canSubmit || !scheduledAt}>
-              {isPending ? "Scheduling..." : "Schedule Post"}
+          </Link>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" type="submit" size="sm" disabled={!canDraft}>
+              {isPending ? "Saving…" : "Save as Draft"}
+            </Button>
+            <Button type="submit" size="sm" disabled={!canSchedule}>
+              {isPending ? "Scheduling…" : "Schedule Post"}
             </Button>
           </div>
         </div>
+
       </form>
     </div>
   );

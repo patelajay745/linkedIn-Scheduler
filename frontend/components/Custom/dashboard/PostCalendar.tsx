@@ -38,7 +38,7 @@ const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 interface PostCalendarProps {
   posts: Post[];
   selectedDate: Date | null;
-  onDaySelect: (date: Date, posts: Post[]) => void;
+  onDaySelect: (date: Date) => void;
 }
 
 export const PostCalendar = ({ posts, selectedDate, onDaySelect }: PostCalendarProps) => {
@@ -153,7 +153,7 @@ export const PostCalendar = ({ posts, selectedDate, onDaySelect }: PostCalendarP
                 posts={dayPosts}
                 isSelected={isSelected}
                 isToday={isDayToday}
-                onClick={() => onDaySelect(day, dayPosts)}
+                onClick={() => onDaySelect(day)}
               />
             );
           })}
