@@ -85,8 +85,7 @@ export const EditPostForm = ({ post }: EditPostFormProps) => {
   };
 
   return (
-    <div className="h-full overflow-auto">
-      <form onSubmit={handleSubmit(onSubmit)} className="h-full flex flex-col">
+    <form onSubmit={handleSubmit(onSubmit)} className="h-screen flex flex-col overflow-hidden">
 
         {/* Page header */}
         <div className="flex items-center gap-4 px-6 py-4 border-b-2 border-border shrink-0">
@@ -107,9 +106,9 @@ export const EditPostForm = ({ post }: EditPostFormProps) => {
         <div className="flex-1 flex flex-col lg:flex-row gap-0 overflow-hidden">
 
           {/* Left — content editor */}
-          <div className="flex-1 p-6 overflow-auto">
-            <Card className="w-full h-full">
-              <Card.Content className="p-6 h-full">
+          <div className="flex-1 p-6 flex flex-col min-h-0">
+            <Card className="w-full flex-1 min-h-0 flex flex-col">
+              <Card.Content className="p-6 flex-1 min-h-0 flex flex-col">
                 <Content
                   register={register}
                   errors={errors}
@@ -177,7 +176,6 @@ export const EditPostForm = ({ post }: EditPostFormProps) => {
         </div>
 
       </form>
-    </div>
   );
 };
 

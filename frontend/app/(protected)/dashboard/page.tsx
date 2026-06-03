@@ -6,18 +6,23 @@ import { Error } from "@/components/Custom/Error";
 import { Loader } from "@/components/retroui/Loader";
 import { usePost } from "@/hooks/usePost";
 import { Post } from "@/types";
-import { isSameDay } from "date-fns";
+import { endOfMonth, isSameDay, startOfMonth } from "date-fns";
 import { useState, useMemo } from "react";
 
 const DashboardPage = () => {
-  const { data, isLoading, isError } = usePost();
+  const [viewMonth, setViewMonth] = useState(() => startOfMonth(new Date()));
+  const from = startOfMonth(viewMonth).toISOString();
+  const to = endOfMonth(viewMonth).toISOString();
+
+  const { data, isLoading, isError } = usePost({ from, to });
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   // Derive selected day's posts reactively so the panel auto-updates after mutations
   const selectedDayPosts = useMemo<Post[]>(() => {
     if (!selectedDate || !data?.posts) return [];
     return data.posts.filter(
-      (post) => post.scheduledAt && isSameDay(new Date(post.scheduledAt), selectedDate)
+      (post) =>
+        post.scheduledAt && isSameDay(new Date(post.scheduledAt), selectedDate),
     );
   }, [selectedDate, data?.posts]);
 
@@ -42,6 +47,8 @@ const DashboardPage = () => {
     setSelectedDate((prev) => (prev && isSameDay(prev, date) ? null : date));
   };
 
+  console.log("data=>", data);
+
   return (
     <div className="flex h-full overflow-hidden">
       <div className="flex-1 overflow-hidden">
@@ -49,6 +56,8 @@ const DashboardPage = () => {
           posts={data?.posts ?? []}
           selectedDate={selectedDate}
           onDaySelect={handleDaySelect}
+          viewMonth={viewMonth}
+          onMonthChange={setViewMonth}
         />
       </div>
 

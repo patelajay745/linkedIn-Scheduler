@@ -56,24 +56,38 @@ const CreatePostPage = () => {
   const onSubmit: SubmitHandler<CreatePostInput> = async (data) => {
     const imageUrls = await Promise.all(selectedFiles.map(uploadImage));
     createPost(
-      { content: data.content, imageUrls, scheduledAt: scheduledAt?.toISOString() },
-      { onSuccess: () => router.push("/dashboard") }
+      {
+        content: data.content,
+        imageUrls,
+        scheduledAt: scheduledAt?.toISOString(),
+      },
+      { onSuccess: () => router.push("/dashboard") },
     );
   };
 
   return (
     <div className="h-full overflow-auto">
       <form onSubmit={handleSubmit(onSubmit)} className="h-full flex flex-col">
-
         {/* Page header */}
         <div className="flex items-center gap-4 px-6 py-4 border-b-2 border-border shrink-0">
           <Link href="/dashboard">
-            <Button variant="ghost" size="icon" type="button" aria-label="Back to dashboard">
-              <HugeiconsIcon icon={ArrowLeftBigIcon} size={16} strokeWidth={2} />
+            <Button
+              variant="ghost"
+              size="icon"
+              type="button"
+              aria-label="Back to dashboard"
+            >
+              <HugeiconsIcon
+                icon={ArrowLeftBigIcon}
+                size={16}
+                strokeWidth={2}
+              />
             </Button>
           </Link>
           <div>
-            <h1 className="text-lg font-heading font-bold leading-none">Create Post</h1>
+            <h1 className="text-lg font-heading font-bold leading-none">
+              Create Post
+            </h1>
             <p className="text-xs text-muted-foreground mt-0.5">
               Write and optionally schedule your LinkedIn post.
             </p>
@@ -82,11 +96,10 @@ const CreatePostPage = () => {
 
         {/* Two-column body */}
         <div className="flex-1 flex flex-col lg:flex-row gap-0 overflow-hidden">
-
           {/* Left — content editor */}
-          <div className="flex-1 p-6 overflow-auto">
-            <Card className="w-full h-full">
-              <Card.Content className="p-6 h-full">
+          <div className="flex-1 p-6 overflow-auto ">
+            <Card className="w-full h-full ">
+              <Card.Content className="p-6 h-full ">
                 <Content
                   register={register}
                   errors={errors}
@@ -99,14 +112,15 @@ const CreatePostPage = () => {
           {/* Right — images + schedule */}
           <div className="w-full lg:w-80 xl:w-96 border-t-2 lg:border-t-0 lg:border-l-2 border-border flex flex-col overflow-auto">
             <div className="flex flex-col gap-0 divide-y-2 divide-border">
-
               {/* Images section */}
               <div className="p-5">
                 <ImagePicker
                   selectedFiles={selectedFiles}
                   onSelect={handleImageSelect}
                   onRemove={(index) =>
-                    setSelectedFiles((prev) => prev.filter((_, i) => i !== index))
+                    setSelectedFiles((prev) =>
+                      prev.filter((_, i) => i !== index),
+                    )
                   }
                 />
               </div>
@@ -140,7 +154,12 @@ const CreatePostPage = () => {
             </Button>
           </Link>
           <div className="flex items-center gap-3">
-            <Button variant="outline" type="submit" size="sm" disabled={!canDraft}>
+            <Button
+              variant="outline"
+              type="submit"
+              size="sm"
+              disabled={!canDraft}
+            >
               {isPending ? "Saving…" : "Save as Draft"}
             </Button>
             <Button type="submit" size="sm" disabled={!canSchedule}>
@@ -148,7 +167,6 @@ const CreatePostPage = () => {
             </Button>
           </div>
         </div>
-
       </form>
     </div>
   );

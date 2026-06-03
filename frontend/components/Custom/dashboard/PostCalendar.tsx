@@ -16,7 +16,7 @@ import {
   startOfMonth,
   subMonths,
 } from "date-fns";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
 // Color coding per status — used for both dot indicators and event chips
 const STATUS_DOT: Record<PostStatus, string> = {
@@ -39,10 +39,11 @@ interface PostCalendarProps {
   posts: Post[];
   selectedDate: Date | null;
   onDaySelect: (date: Date) => void;
+  viewMonth: Date;
+  onMonthChange: (month: Date) => void;
 }
 
-export const PostCalendar = ({ posts, selectedDate, onDaySelect }: PostCalendarProps) => {
-  const [viewMonth, setViewMonth] = useState(() => startOfMonth(new Date()));
+export const PostCalendar = ({ posts, selectedDate, onDaySelect, viewMonth, onMonthChange }: PostCalendarProps) => {
 
   const monthStart = startOfMonth(viewMonth);
   const monthEnd = endOfMonth(viewMonth);
@@ -60,13 +61,18 @@ export const PostCalendar = ({ posts, selectedDate, onDaySelect }: PostCalendarP
     }, {});
   }, [posts]);
 
-  const scheduledThisMonth = useMemo(
-    () => days.reduce((n, day) => n + (postsByDate[format(day, "yyyy-MM-dd")]?.length ?? 0), 0),
-    [days, postsByDate]
+  const scheduledCount = useMemo(
+    () => posts.filter((p) => p.status === PostStatus.SCHEDULED).length,
+    [posts]
   );
 
-  const unscheduledCount = useMemo(
-    () => posts.filter((p) => !p.scheduledAt).length,
+  const publishedCount = useMemo(
+    () => posts.filter((p) => p.status === PostStatus.PUBLISHED).length,
+    [posts]
+  );
+
+  const failedCount = useMemo(
+    () => posts.filter((p) => p.status === PostStatus.FAILED).length,
     [posts]
   );
 
@@ -79,12 +85,19 @@ export const PostCalendar = ({ posts, selectedDate, onDaySelect }: PostCalendarP
             {format(viewMonth, "MMMM yyyy")}
           </h2>
           <div className="flex items-center gap-2 text-xs font-mono">
-            <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded border border-blue-200">
-              {scheduledThisMonth} scheduled
-            </span>
-            {unscheduledCount > 0 && (
-              <span className="px-2 py-0.5 bg-muted text-muted-foreground rounded border border-border">
-                {unscheduledCount} drafts
+            {scheduledCount > 0 && (
+              <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded border border-blue-200">
+                {scheduledCount} scheduled
+              </span>
+            )}
+            {publishedCount > 0 && (
+              <span className="px-2 py-0.5 bg-green-50 text-green-700 rounded border border-green-200">
+                {publishedCount} published
+              </span>
+            )}
+            {failedCount > 0 && (
+              <span className="px-2 py-0.5 bg-red-50 text-red-700 rounded border border-red-200">
+                {failedCount} failed
               </span>
             )}
           </div>
@@ -94,7 +107,7 @@ export const PostCalendar = ({ posts, selectedDate, onDaySelect }: PostCalendarP
           <Button
             variant="outline"
             size="icon"
-            onClick={() => setViewMonth((m) => subMonths(m, 1))}
+            onClick={() => onMonthChange(subMonths(viewMonth, 1))}
             aria-label="Previous month"
           >
             <HugeiconsIcon icon={ArrowLeftBigIcon} size={14} strokeWidth={2} />
@@ -102,14 +115,14 @@ export const PostCalendar = ({ posts, selectedDate, onDaySelect }: PostCalendarP
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setViewMonth(startOfMonth(new Date()))}
+            onClick={() => onMonthChange(startOfMonth(new Date()))}
           >
             Today
           </Button>
           <Button
             variant="outline"
             size="icon"
-            onClick={() => setViewMonth((m) => addMonths(m, 1))}
+            onClick={() => onMonthChange(addMonths(viewMonth, 1))}
             aria-label="Next month"
           >
             <HugeiconsIcon icon={ArrowRightBigIcon} size={14} strokeWidth={2} />
