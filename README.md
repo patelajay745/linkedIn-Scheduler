@@ -1,183 +1,131 @@
-# LinkedIn Post Scheduler
+# Linked Schedular
 
-A self-hosted backend for writing and scheduling LinkedIn posts in advance. Built as a personal project to go deeper into production backend patterns: OAuth 2.0 token management, background job processing, S3 presigned uploads, and external API integration.
+Self-hosted LinkedIn post scheduler. Free to run, you own everything.
+
+## Why
+
+I got tired of paying for tools that do too much and ask for too many permissions. I just wanted to write a post, pick a time, and have it go out. So I built this.
+
+It also gave me a real project to dig into OAuth token management, background job processing, presigned S3 uploads, and external API integration all at once.
 
 ## What it does
 
-You authenticate once with LinkedIn. After that, you can create posts with text and images, optionally set a future publish time, and the system handles publishing automatically. Posts go through a clear lifecycle: draft while you are working on them, scheduled when a time is set, published after the worker processes them, or failed if all retry attempts are exhausted.
+You sign in once with LinkedIn. After that you can write posts, attach images, set a publish time, and forget about it. The worker picks up the job and publishes at the right time. If something goes wrong it retries a few times before marking the post as failed.
 
-Publishing is handled by a background worker that runs completely independently of the API. This matters because the API is deployed on Cloud Run which scales to zero — if the API instance shuts down, jobs already in the queue are unaffected.
+Posts go through four states: draft when you are still working on it, scheduled once you set a time, published after the worker runs it, and failed if all retries are exhausted.
+
+There is a calendar view to see what is going out and when, and a post editor with image upload support (up to 20 images per post via S3).
+
+## Stack
+
+Frontend is Next.js 15 with Tailwind, React Query, Framer Motion, and Lenis. The design is retro/neobrutalist.
+
+Backend is Bun with Express 5, Prisma 7, and PostgreSQL. Job scheduling goes through BullMQ and Redis. Sessions also live in Redis. Images are uploaded directly to S3 via presigned URLs so the server never touches the file bytes. LinkedIn tokens are stored with field-level encryption.
 
 ## Architecture
 
-The system is split into two independently deployed services.
+There are two backend processes that run independently.
 
-The **API** is a stateless Express server running on Google Cloud Run. It handles OAuth, post management, image uploads, and enqueuing scheduled jobs. It scales to zero when idle.
-
-The **Worker** runs on a DigitalOcean Droplet as a persistent process. It connects to the same Redis instance and processes BullMQ jobs as their scheduled time arrives. It runs 24/7 regardless of API traffic.
+The API handles OAuth, post CRUD, image presigning, and enqueuing jobs. The worker is a separate long-running process that watches the BullMQ queue and publishes posts when their time arrives.
 
 ```
-Client
-  |
-  v
-Express API (Cloud Run) -----> PostgreSQL
-  |
-  v
-Redis (BullMQ Queue)
-  |
-  v
-BullMQ Worker (DigitalOcean Droplet) -----> LinkedIn API
+Browser (Next.js)
+      |
+      v
+Express API (Bun) ──> PostgreSQL
+      |                   ^
+      v                   |
+Redis (Queue + Sessions)  |
+      |                   |
+      v                   |
+BullMQ Worker ────────────
+      |
+      v
+LinkedIn API
 ```
 
-Both services share PostgreSQL (posts, users, tokens) and Redis (job queue and API sessions).
+## Prerequisites
 
-## Tech Stack
+You need Bun, Node.js, PostgreSQL, Redis, a LinkedIn developer app with OAuth configured, and an AWS S3 bucket for images.
 
-* Bun as the runtime
-* Express 5 for HTTP
-* TypeScript throughout
-* Prisma 7 with PostgreSQL
-* BullMQ and IORedis for job scheduling
-* Redis with connect-redis for session storage
-* AWS S3 with presigned URLs for image storage
-* Zod v4 for request validation
-* LinkedIn REST API for publishing
+## Local Setup
 
-## How scheduling works
+Clone the repo:
 
-When you create a post with a `scheduledAt` time, the API saves it with `SCHEDULED` status and adds a BullMQ job to Redis. The delay is calculated as the difference between the target time and the current moment in milliseconds. BullMQ stores delayed jobs in a Redis sorted set ordered by their target timestamp and moves them to the active queue when their time is up.
-
-If a job fails due to a transient error (LinkedIn 5xx, network issues), BullMQ retries it up to three times with exponential backoff starting at 2 seconds. Permanent errors (post not found, already published, authentication failure) are wrapped in `UnrecoverableError` so retries are skipped entirely. Once all retries are exhausted, the worker's `failed` event handler marks the post as `FAILED` in the database.
-
-Cancelling or rescheduling a post removes the existing BullMQ job before creating a new one. The `bullJobId` is stored on the post record for this purpose.
-
-## Image uploads
-
-The server never touches image bytes. When you want to upload an image, you first request a presigned S3 URL from the API. The API generates a signed URL with a 5-minute expiry and returns both the upload URL and the public S3 URL. You PUT the image binary directly to S3 from the client. Then you pass the public S3 URL in your post's `imageUrls` field.
-
-LinkedIn supports up to 20 images per post. Single-image posts use the `content.media` structure. Multi-image posts use `content.multiImage`. Text-only posts omit the content field entirely.
-
-## LinkedIn token management
-
-Access tokens are stored in the database and refreshed automatically when they are within 5 minutes of expiry. If a refresh token is not available (LinkedIn does not always issue them), the worker throws a permanent error and the user must re-authenticate. Token storage uses field-level encryption via `prisma-field-encryption`.
-
-## API Reference
-
-All endpoints are prefixed with `/api/v1`. All post and upload endpoints require an active session.
-
-**Authentication**
-
-```
-GET  /auth/linkedin           Redirect to LinkedIn OAuth consent screen
-GET  /auth/linkedin/callback  OAuth callback, establishes session
-GET  /auth/me                 Returns authenticated user profile
+```bash
+git clone https://github.com/patelajay745/linkedIn-Scheduler.git
+cd linked-schedular
 ```
 
-**Image Upload**
-
-```
-POST /upload/presign
-```
-
-Request body:
-```json
-{
-  "fileName": "image.jpg",
-  "contentType": "image/jpeg"
-}
-```
-
-Response:
-```json
-{
-  "uploadUrl": "https://s3.amazonaws.com/...",
-  "publicUrl": "https://your-bucket.s3.region.amazonaws.com/uuid-image.jpg"
-}
-```
-
-PUT the image binary to `uploadUrl`. Store `publicUrl` in your post's `imageUrls` array.
-
-**Posts**
-
-```
-POST   /posts                  Create a post
-GET    /posts                  List posts
-GET    /posts/:id              Get a single post
-PATCH  /posts/:id              Update a post
-DELETE /posts/:id              Delete a post
-POST   /posts/:id/publish-now  Publish immediately
-```
-
-**Creating a post**
-
-```json
-{
-  "content": "Your post content",
-  "imageUrls": ["https://..."],
-  "scheduledAt": "2026-05-26T10:00:00.000Z"
-}
-```
-
-`imageUrls` is optional, maximum 20. `scheduledAt` is optional and must be an ISO 8601 datetime in the future. Omitting it creates a draft.
-
-**Listing posts**
-
-Supports optional query parameters: `status` (DRAFT, SCHEDULED, PUBLISHED, FAILED), `from` and `to` as ISO datetime strings for filtering by scheduled date range.
-
-**Post status values:** `DRAFT` `SCHEDULED` `PUBLISHED` `FAILED`
-
-Only posts in `DRAFT` or `SCHEDULED` status can be updated or deleted. Updating a post's `scheduledAt` cancels the existing job and enqueues a new one atomically.
-
-## Running locally
-
-You need Bun, PostgreSQL, and Redis running locally.
+Set up the backend:
 
 ```bash
 cd backend
 bun install
-cp .env.example .env   # fill in your values
+cp .env.example .env
 bunx prisma migrate dev
 ```
 
-Start the API and worker in separate terminals:
+Start the API:
 
 ```bash
-# Terminal 1
-bun run src/index.ts
+bun run dev
+```
 
-# Terminal 2
+**Start the worker in a separate terminal. This is not optional.** Without the worker running, scheduled posts will never be published. They just sit in the queue.
+
+```bash
 bun run src/workers/postWorker.ts
 ```
 
-## Environment variables
+Set up the frontend:
+
+```bash
+cd frontend
+npm install
+cp .env.example .env.local
+npm run dev
+```
+
+Open `http://localhost:3000`, sign in with LinkedIn, and you are good to go.
+
+## Environment Variables
+
+Backend (`backend/.env`):
 
 ```
-DATABASE_URL              PostgreSQL connection string
-REDIS_URL                 Redis connection string
-SESSION_SECRET            Secret for signing session cookies
-LINKEDIN_CLIENT_ID        LinkedIn OAuth app client ID
-LINKEDIN_CLIENT_SECRET    LinkedIn OAuth app client secret
-LINKEDIN_REDIRECT_URI     OAuth callback URL registered in your LinkedIn app
-LINKEDIN_API_VERSION      LinkedIn API version date (e.g. 202502)
-ALLOWED_LINKEDIN_ID       Your LinkedIn member ID — only this account can authenticate
-AWS_REGION                S3 bucket region
-AWS_ACCESS_KEY            AWS access key with S3 put permissions
-AWS_SECRET_KEY            AWS secret key
-AWS_BUCKET_NAME           S3 bucket name
-APP_NAME                  Prefix for Redis session keys
-FRONTEND_URL              Where to redirect after successful OAuth
+PORT                      defaults to 8080
 NODE_ENV                  development or production
-PORT                      Server port, defaults to 8080
+APP_NAME                  prefix for Redis keys, e.g. LINKEDIN_SCHEDULER
+
+DATABASE_URL              PostgreSQL connection string
+PRISMA_FIELD_ENCRYPTION_KEY   generate with: openssl rand -base64 32
+
+REDIS_URL                 defaults to redis://localhost:6379
+SESSION_SECRET            any long random string
+
+LINKEDIN_CLIENT_ID
+LINKEDIN_CLIENT_SECRET
+LINKEDIN_REDIRECT_URI     http://localhost:8080/api/v1/auth/linkedin/callback
+LINKEDIN_API_VERSION      e.g. 202502
+ALLOWED_LINKEDIN_ID       your LinkedIn member ID, only this account can log in
+
+AWS_ACCESS_KEY
+AWS_SECRET_KEY
+AWS_REGION
+AWS_BUCKET_NAME
+
+FRONTEND_URL              where to redirect after OAuth, e.g. http://localhost:3000
+```
+
+To find your LinkedIn member ID, do a first login attempt and check the callback response, or look at your profile URL.
+
+Frontend (`frontend/.env.local`):
+
+```
+NEXT_PUBLIC_API_URL       http://localhost:8080/api/v1
 ```
 
 ## Access control
 
-This is a single-user tool. The `ALLOWED_LINKEDIN_ID` variable is checked at the OAuth callback — anyone who authenticates with a different LinkedIn account gets a 403. There is no registration, no invite system, and no multi-tenancy.
-
-## Deployment
-
-The API is containerized and deployed to Google Cloud Run. It is stateless: no local state, session data lives in Redis, all persistence goes to PostgreSQL.
-
-The worker is deployed to a DigitalOcean Droplet and kept alive with pm2. It must be always running — it cannot be on a platform that scales to zero.
-
-Both services use the same PostgreSQL and Redis instances. The only shared configuration is the `REDIS_URL` and `DATABASE_URL`.
+Single-user only. The `ALLOWED_LINKEDIN_ID` check runs at the OAuth callback. Any account other than yours gets a 403. There is no registration or multi-tenancy by design.
